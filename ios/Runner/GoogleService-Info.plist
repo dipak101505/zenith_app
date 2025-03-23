@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>572657056042-osfkfubhsmvqt1kni4ga16cj0tc65m4k.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.572657056042-osfkfubhsmvqt1kni4ga16cj0tc65m4k</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDvMmbcMacbHl6FYLdRW-Wq4mXuLWKt2-w</string>
+	<key>GCM_SENDER_ID</key>
+	<string>572657056042</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.rbdApp</string>
+	<key>PROJECT_ID</key>
+	<string>cloud-profiler-demo-399610</string>
+	<key>STORAGE_BUCKET</key>
+	<string>cloud-profiler-demo-399610.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:572657056042:ios:9d7c8cf91f46461592c653</string>
+	<key>DATABASE_URL</key>
+	<string>https://cloud-profiler-demo-399610-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

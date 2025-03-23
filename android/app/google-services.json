@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "572657056042",
+    "firebase_url": "https://cloud-profiler-demo-399610-default-rtdb.firebaseio.com",
+    "project_id": "cloud-profiler-demo-399610",
+    "storage_bucket": "cloud-profiler-demo-399610.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:572657056042:android:4d9ef047e92ad23292c653",
+        "android_client_info": {
+          "package_name": "com.example.rbd_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "572657056042-j9l4cltdv9rqpvjalj8jmj7clkaodgqm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOg2lOA7Qvtd6liCIc0KqoBqKSByrtzIU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "572657056042-60b2ol5too057rp35aopot4clcfh1pgo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
