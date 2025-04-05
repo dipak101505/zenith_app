@@ -314,6 +314,7 @@ class _VideoListPageState extends State<VideoListPage> {
                                               videoUrl:
                                                   'https://vz-d5d4ebc7-6d2.b-cdn.net/${video['bunnyVideoId']}/playlist.m3u8',
                                               actorName: user!.email!,
+                                              videoName: video['name'],
                                             ),
                                       ),
                                     );

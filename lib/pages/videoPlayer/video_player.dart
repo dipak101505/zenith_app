@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter/services.dart';
@@ -6,8 +7,13 @@ import 'package:logger/logger.dart';
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
   final String actorName;
+  final String videoName;
 
-  VideoPlayerScreen({required this.videoUrl, required this.actorName});
+  VideoPlayerScreen({
+    required this.videoUrl,
+    required this.actorName,
+    required this.videoName,
+  });
 
   @override
   _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
@@ -21,11 +27,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   String _errorMessage = "";
   bool _isFullScreen = false;
   final Logger logger = Logger();
+  Timer? _hideControlsTimer;
 
   @override
   void initState() {
     super.initState();
+
+    // Log the video name
+    logger.i("Opening video: ${widget.videoName}");
     logger.i("Video URL: ${widget.videoUrl}");
+
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
 
     _initializeVideoPlayerFuture = _controller
@@ -54,7 +65,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _hideControlsTimer?.cancel();
     super.dispose();
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+
+    // Reset the timer to hide controls after 3 seconds
+    _hideControlsTimer?.cancel();
+    if (_showControls) {
+      _hideControlsTimer = Timer(Duration(seconds: 3), () {
+        setState(() {
+          _showControls = false;
+        });
+      });
+    }
   }
 
   void _toggleFullScreen() {
@@ -75,7 +103,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _isFullScreen
               ? null
               : AppBar(
-                title: Text(widget.actorName),
+                title: Text(
+                  widget.videoName
+                      .split('_')
+                      .sublist(2)
+                      .join('_'), // Extract chapter_video
+                ),
                 backgroundColor: Colors.orange,
               ),
       body:
@@ -115,111 +148,98 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done &&
                       !_hasError) {
-                    return Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showControls = !_showControls;
-                            });
-                          },
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                color: Colors.black,
-                                child: AspectRatio(
-                                  aspectRatio: _controller.value.aspectRatio,
-                                  child: VideoPlayer(_controller),
-                                ),
-                              ),
-                              if (_showControls)
-                                IconButton(
-                                  icon: Icon(
-                                    _controller.value.isPlaying
-                                        ? Icons.pause_circle_filled
-                                        : Icons.play_circle_fill,
-                                    size: 60,
-                                    color: Colors.white.withOpacity(0.7),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      if (_controller.value.isPlaying) {
-                                        _controller.pause();
-                                      } else {
-                                        _controller.play();
-                                      }
-                                    });
-                                  },
-                                ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8.0,
-                            horizontal: 16.0,
-                          ),
-                          child: VideoProgressIndicator(
-                            _controller,
-                            allowScrubbing: true,
-                            colors: VideoProgressColors(
-                              playedColor: Colors.orange,
-                              bufferedColor: Colors.orange.withOpacity(0.3),
-                              backgroundColor: Colors.grey.withOpacity(0.5),
+                    return GestureDetector(
+                      onTap: _toggleControls,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            color: Colors.black,
+                            child: AspectRatio(
+                              aspectRatio: _controller.value.aspectRatio,
+                              child: VideoPlayer(_controller),
                             ),
                           ),
-                        ),
-                        if (_showControls)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.replay_10),
-                                onPressed: () {
-                                  final position =
-                                      _controller.value.position -
-                                      Duration(seconds: 10);
-                                  _controller.seekTo(position);
-                                },
+                          if (_showControls)
+                            Positioned.fill(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.replay_10,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          final position =
+                                              _controller.value.position -
+                                              Duration(seconds: 10);
+                                          _controller.seekTo(position);
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          _controller.value.isPlaying
+                                              ? Icons.pause
+                                              : Icons.play_arrow,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            if (_controller.value.isPlaying) {
+                                              _controller.pause();
+                                            } else {
+                                              _controller.play();
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.forward_10,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          final position =
+                                              _controller.value.position +
+                                              Duration(seconds: 10);
+                                          _controller.seekTo(position);
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          _isFullScreen
+                                              ? Icons.fullscreen_exit
+                                              : Icons.fullscreen,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: _toggleFullScreen,
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: Icon(
-                                  _controller.value.isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow,
-                                  size: 30,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    if (_controller.value.isPlaying) {
-                                      _controller.pause();
-                                    } else {
-                                      _controller.play();
-                                    }
-                                  });
-                                },
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: VideoProgressIndicator(
+                              _controller,
+                              allowScrubbing: true,
+                              colors: VideoProgressColors(
+                                playedColor: Colors.orange,
+                                bufferedColor: Colors.orange.withOpacity(0.3),
+                                backgroundColor: Colors.grey.withOpacity(0.5),
                               ),
-                              IconButton(
-                                icon: Icon(Icons.forward_10),
-                                onPressed: () {
-                                  final position =
-                                      _controller.value.position +
-                                      Duration(seconds: 10);
-                                  _controller.seekTo(position);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  _isFullScreen
-                                      ? Icons.fullscreen_exit
-                                      : Icons.fullscreen,
-                                ),
-                                onPressed: _toggleFullScreen,
-                              ),
-                            ],
+                            ),
                           ),
-                      ],
+                        ],
+                      ),
                     );
                   } else {
                     return Center(

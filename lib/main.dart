@@ -48,7 +48,8 @@ class MyApp extends StatelessWidget {
         '/video':
             (context) => VideoPlayerScreen(
               videoUrl: 'https://www.example.com/video.mp4',
-              actorName: 'John Doe',
+              actorName: 'Zenith',
+              videoName: 'Video',
             ),
       },
     );

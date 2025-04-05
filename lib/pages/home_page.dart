@@ -81,6 +81,7 @@ class _HomePageState extends State<HomePage> {
                                   videoUrl:
                                       'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', // Replace with actual video URL
                                   actorName: _actorNames[index],
+                                  videoName: _actorNames[index],
                                 ),
                           ),
                         );
