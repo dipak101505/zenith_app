@@ -101,7 +101,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return Scaffold(
       appBar:
           _isFullScreen
-              ? null
+              ? null // Remove the AppBar in fullscreen mode
               : AppBar(
                 title: Text(
                   widget.videoName
@@ -155,10 +155,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         children: [
                           Container(
                             color: Colors.black,
-                            child: AspectRatio(
-                              aspectRatio: _controller.value.aspectRatio,
-                              child: VideoPlayer(_controller),
-                            ),
+                            child:
+                                _isFullScreen
+                                    ? Center(
+                                      child: VideoPlayer(_controller),
+                                    ) // Fullscreen mode: Center the video
+                                    : AspectRatio(
+                                      aspectRatio:
+                                          _controller.value.aspectRatio,
+                                      child: VideoPlayer(_controller),
+                                    ), // Normal mode: Maintain aspect ratio
                           ),
                           if (_showControls)
                             Positioned.fill(
