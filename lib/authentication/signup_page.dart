@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:rbd_app/pages/home_page.dart';
 import 'package:rbd_app/authentication/login_page.dart';
 
 class SignupPage extends StatefulWidget {
@@ -15,17 +14,31 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
-  late String _email,
-      _password,
-      _confirmPassword,
-      _name,
-      _mobile,
-      _centre,
-      _batch;
+
+  // Controllers for form fields
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _schoolController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  String _class = '11';
+  String _board = '';
+  String _batch = '';
+  String _centre = '';
   File? _profileImage;
-  bool _isLoading = false;
-  List<String> _centres = [];
+
+  // Dropdown options
+  List<String> _classes = List.generate(12, (index) => (index + 1).toString());
+  List<String> _boards = ['CBSE', 'ICSE', 'WB'];
   List<String> _batches = [];
+  List<String> _centres = [];
+
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -66,7 +79,7 @@ class _SignupPageState extends State<SignupPage> {
     if (_profileImage == null) return null;
     final ref = FirebaseStorage.instance
         .ref()
-        .child('user_images')
+        .child('student-images')
         .child('$uid.jpg');
     await ref.putFile(_profileImage!);
     return await ref.getDownloadURL();
@@ -74,43 +87,56 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-    if (_password != _confirmPassword) {
+
+    if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Passwords do not match')));
       return;
     }
+
     try {
       setState(() => _isLoading = true);
+
+      // Create user
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _email,
-        password: _password,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
       final uid = userCredential.user!.uid;
+
+      // Upload profile image
       final imageUrl = await _uploadProfileImage(uid);
 
+      // Save user data to Firestore
       await FirebaseFirestore.instance.collection('students').doc(uid).set({
         'uid': uid,
-        'email': _email,
-        'name': _name,
-        'centre': _centre,
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'mobile': _mobileController.text.trim(),
+        'address': _addressController.text.trim(),
+        'dob': _dobController.text.trim(),
+        'school': _schoolController.text.trim(),
+        'class': _class,
+        'board': _board,
         'batch': _batch,
-        'mobile': _mobile,
+        'centre': _centre,
         'imageUrl': imageUrl ?? '',
         'createdAt': Timestamp.now(),
         'status': 'pending',
       });
 
+      // Send email verification
       await userCredential.user!.sendEmailVerification();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Verification email sent. Check your inbox.')),
       );
+
+      // Navigate to login page
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (context) => LoginPage()));
     } catch (e) {
-      print("Error during signup: $e");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -122,7 +148,7 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
+      appBar: AppBar(title: Text('Student Registration')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child:
@@ -132,91 +158,164 @@ class _SignupPageState extends State<SignupPage> {
                   key: _formKey,
                   child: ListView(
                     children: [
+                      // Full Name
                       TextFormField(
-                        decoration: InputDecoration(labelText: 'Full Name'),
+                        controller: _nameController,
+                        decoration: InputDecoration(labelText: 'Full Name *'),
                         validator:
                             (value) =>
                                 value!.isEmpty ? 'Enter your name' : null,
-                        onSaved: (value) => _name = value!.trim(),
                       ),
+
+                      // Email
                       TextFormField(
-                        decoration: InputDecoration(labelText: 'Email'),
+                        controller: _emailController,
+                        decoration: InputDecoration(labelText: 'Email *'),
                         validator:
                             (value) =>
                                 value!.isEmpty ? 'Enter your email' : null,
-                        onSaved: (value) => _email = value!.trim(),
                       ),
+
+                      // Mobile
                       TextFormField(
-                        decoration: InputDecoration(labelText: 'Mobile'),
+                        controller: _mobileController,
+                        decoration: InputDecoration(
+                          labelText: 'Mobile Number *',
+                        ),
+                        validator:
+                            (value) =>
+                                value!.length != 10
+                                    ? 'Enter a valid 10-digit mobile number'
+                                    : null,
+                      ),
+
+                      // Address
+                      TextFormField(
+                        controller: _addressController,
+                        decoration: InputDecoration(labelText: 'Address'),
+                      ),
+
+                      // Date of Birth
+                      TextFormField(
+                        controller: _dobController,
+                        decoration: InputDecoration(
+                          labelText: 'Date of Birth *',
+                        ),
+                      ),
+
+                      // School Name
+                      TextFormField(
+                        controller: _schoolController,
+                        decoration: InputDecoration(labelText: 'School Name *'),
                         validator:
                             (value) =>
                                 value!.isEmpty
-                                    ? 'Enter your mobile number'
+                                    ? 'Enter your school name'
                                     : null,
-                        onSaved: (value) => _mobile = value!.trim(),
                       ),
+
+                      // Class
                       DropdownButtonFormField<String>(
-                        decoration: InputDecoration(labelText: 'Centre'),
+                        decoration: InputDecoration(labelText: 'Class *'),
                         items:
-                            _centres.map((centre) {
-                              return DropdownMenuItem<String>(
-                                value: centre,
-                                child: Text(centre),
-                              );
-                            }).toList(),
-                        onChanged: (value) => _centre = value!,
+                            _classes
+                                .map(
+                                  (cls) => DropdownMenuItem(
+                                    value: cls,
+                                    child: Text('Class $cls'),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => _class = value!,
                         validator:
-                            (value) => value == null ? 'Select a centre' : null,
+                            (value) => value == null ? 'Select a class' : null,
                       ),
+
+                      // Board
                       DropdownButtonFormField<String>(
-                        decoration: InputDecoration(labelText: 'Batch'),
+                        decoration: InputDecoration(labelText: 'Board *'),
                         items:
-                            _batches.map((batch) {
-                              return DropdownMenuItem<String>(
-                                value: batch,
-                                child: Text(batch),
-                              );
-                            }).toList(),
+                            _boards
+                                .map(
+                                  (board) => DropdownMenuItem(
+                                    value: board,
+                                    child: Text(board),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => _board = value!,
+                        validator:
+                            (value) => value == null ? 'Select a board' : null,
+                      ),
+
+                      // Batch
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(labelText: 'Batch *'),
+                        items:
+                            _batches
+                                .map(
+                                  (batch) => DropdownMenuItem(
+                                    value: batch,
+                                    child: Text(batch),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (value) => _batch = value!,
                         validator:
                             (value) => value == null ? 'Select a batch' : null,
                       ),
+
+                      // Centre
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(labelText: 'Centre *'),
+                        items:
+                            _centres
+                                .map(
+                                  (centre) => DropdownMenuItem(
+                                    value: centre,
+                                    child: Text(centre),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => _centre = value!,
+                        validator:
+                            (value) => value == null ? 'Select a centre' : null,
+                      ),
+
+                      // Password
                       TextFormField(
-                        decoration: InputDecoration(labelText: 'Password'),
+                        controller: _passwordController,
+                        decoration: InputDecoration(labelText: 'Password *'),
                         obscureText: true,
                         validator:
                             (value) =>
                                 value!.isEmpty ? 'Enter a password' : null,
-                        onSaved: (value) => _password = value!.trim(),
                       ),
+
+                      // Confirm Password
                       TextFormField(
+                        controller: _confirmPasswordController,
                         decoration: InputDecoration(
-                          labelText: 'Confirm Password',
+                          labelText: 'Confirm Password *',
                         ),
                         obscureText: true,
                         validator:
                             (value) =>
                                 value!.isEmpty ? 'Confirm your password' : null,
-                        onSaved: (value) => _confirmPassword = value!.trim(),
                       ),
-                      SizedBox(height: 16),
+
+                      // Profile Picture
                       Row(
                         children: [
                           CircleAvatar(
                             radius: 32,
-                            backgroundColor:
-                                Colors.orange, // Set background color to orange
                             backgroundImage:
                                 _profileImage == null
                                     ? null
                                     : FileImage(_profileImage!),
                             child:
                                 _profileImage == null
-                                    ? Icon(
-                                      Icons.person,
-                                      size: 32,
-                                      color: Colors.white,
-                                    ) // Optional: change icon color for better contrast
+                                    ? Icon(Icons.person, size: 32)
                                     : null,
                           ),
                           SizedBox(width: 16),
@@ -226,11 +325,16 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                         ],
                       ),
+
                       SizedBox(height: 16),
+
+                      // Submit Button
                       ElevatedButton(
                         onPressed: _submit,
                         child: Text('Register'),
                       ),
+
+                      // Login Link
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
