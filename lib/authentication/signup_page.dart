@@ -20,7 +20,6 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
   final TextEditingController _schoolController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -29,14 +28,23 @@ class _SignupPageState extends State<SignupPage> {
   String _class = '11';
   String _board = '';
   String _batch = '';
-  String _centre = '';
+  List<String> _centres = [];
+  String _dobYear = '';
+  String _dobMonth = '';
+  String _dobDay = '';
   File? _profileImage;
 
   // Dropdown options
   List<String> _classes = List.generate(12, (index) => (index + 1).toString());
   List<String> _boards = ['CBSE', 'ICSE', 'WB'];
   List<String> _batches = [];
-  List<String> _centres = [];
+  List<String> _availableCentres = [];
+  List<String> _years = List.generate(
+    100,
+    (index) => (2025 - index).toString(),
+  );
+  List<String> _months = List.generate(12, (index) => (index + 1).toString());
+  List<String> _days = List.generate(31, (index) => (index + 1).toString());
 
   bool _isLoading = false;
 
@@ -54,7 +62,7 @@ class _SignupPageState extends State<SignupPage> {
           await FirebaseFirestore.instance.collection('batches').get();
 
       setState(() {
-        _centres =
+        _availableCentres =
             centresSnapshot.docs.map((doc) => doc['name'] as String).toList();
         _batches =
             batchesSnapshot.docs.map((doc) => doc['name'] as String).toList();
@@ -95,6 +103,9 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
+    // Combine Date of Birth
+    final dob = '$_dobYear-$_dobMonth-$_dobDay';
+
     try {
       setState(() => _isLoading = true);
 
@@ -115,12 +126,12 @@ class _SignupPageState extends State<SignupPage> {
         'name': _nameController.text.trim(),
         'mobile': _mobileController.text.trim(),
         'address': _addressController.text.trim(),
-        'dob': _dobController.text.trim(),
+        'dob': dob,
         'school': _schoolController.text.trim(),
         'class': _class,
         'board': _board,
         'batch': _batch,
-        'centre': _centre,
+        'centres': _centres, // Store as an array of strings
         'imageUrl': imageUrl ?? '',
         'createdAt': Timestamp.now(),
         'status': 'pending',
@@ -195,23 +206,106 @@ class _SignupPageState extends State<SignupPage> {
                         decoration: InputDecoration(labelText: 'Address'),
                       ),
 
-                      // Date of Birth
-                      TextFormField(
-                        controller: _dobController,
-                        decoration: InputDecoration(
-                          labelText: 'Date of Birth *',
-                        ),
+                      // Date of Birth Dropdown
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(labelText: 'Year'),
+                              items:
+                                  _years
+                                      .map(
+                                        (year) => DropdownMenuItem(
+                                          value: year,
+                                          child: Text(year),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  (value) => setState(() => _dobYear = value!),
+                              validator:
+                                  (value) =>
+                                      value == null ? 'Select year' : null,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(labelText: 'Month'),
+                              items:
+                                  _months
+                                      .map(
+                                        (month) => DropdownMenuItem(
+                                          value: month,
+                                          child: Text(month),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  (value) => setState(() => _dobMonth = value!),
+                              validator:
+                                  (value) =>
+                                      value == null ? 'Select month' : null,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(labelText: 'Day'),
+                              items:
+                                  _days
+                                      .map(
+                                        (day) => DropdownMenuItem(
+                                          value: day,
+                                          child: Text(day),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  (value) => setState(() => _dobDay = value!),
+                              validator:
+                                  (value) =>
+                                      value == null ? 'Select day' : null,
+                            ),
+                          ),
+                        ],
                       ),
 
-                      // School Name
-                      TextFormField(
-                        controller: _schoolController,
-                        decoration: InputDecoration(labelText: 'School Name *'),
+                      // Centres (Multi-Select)
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(labelText: 'Centre *'),
+                        items:
+                            _availableCentres
+                                .map(
+                                  (centre) => DropdownMenuItem(
+                                    value: centre,
+                                    child: Text(centre),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) {
+                          if (value != null && !_centres.contains(value)) {
+                            setState(() => _centres.add(value));
+                          }
+                        },
                         validator:
                             (value) =>
-                                value!.isEmpty
-                                    ? 'Enter your school name'
+                                _centres.isEmpty
+                                    ? 'Select at least one centre'
                                     : null,
+                      ),
+                      Wrap(
+                        children:
+                            _centres
+                                .map(
+                                  (centre) => Chip(
+                                    label: Text(centre),
+                                    onDeleted: () {
+                                      setState(() => _centres.remove(centre));
+                                    },
+                                  ),
+                                )
+                                .toList(),
                       ),
 
                       // Class
@@ -226,7 +320,7 @@ class _SignupPageState extends State<SignupPage> {
                                   ),
                                 )
                                 .toList(),
-                        onChanged: (value) => _class = value!,
+                        onChanged: (value) => setState(() => _class = value!),
                         validator:
                             (value) => value == null ? 'Select a class' : null,
                       ),
@@ -243,7 +337,7 @@ class _SignupPageState extends State<SignupPage> {
                                   ),
                                 )
                                 .toList(),
-                        onChanged: (value) => _board = value!,
+                        onChanged: (value) => setState(() => _board = value!),
                         validator:
                             (value) => value == null ? 'Select a board' : null,
                       ),
@@ -260,26 +354,20 @@ class _SignupPageState extends State<SignupPage> {
                                   ),
                                 )
                                 .toList(),
-                        onChanged: (value) => _batch = value!,
+                        onChanged: (value) => setState(() => _batch = value!),
                         validator:
                             (value) => value == null ? 'Select a batch' : null,
                       ),
 
-                      // Centre
-                      DropdownButtonFormField<String>(
-                        decoration: InputDecoration(labelText: 'Centre *'),
-                        items:
-                            _centres
-                                .map(
-                                  (centre) => DropdownMenuItem(
-                                    value: centre,
-                                    child: Text(centre),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (value) => _centre = value!,
+                      // School Name
+                      TextFormField(
+                        controller: _schoolController,
+                        decoration: InputDecoration(labelText: 'School Name *'),
                         validator:
-                            (value) => value == null ? 'Select a centre' : null,
+                            (value) =>
+                                value!.isEmpty
+                                    ? 'Enter your school name'
+                                    : null,
                       ),
 
                       // Password
