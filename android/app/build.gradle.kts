@@ -8,9 +8,18 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
+val localProperties = Properties()
+val localPropertiesFile = File(rootProject.projectDir, "key.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
 android {
-    namespace = "com.example.rbd_app"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.zenith.lms"
+    compileSdk = 35 // Increased to 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -19,25 +28,39 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "11"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.rbd_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.zenith.lms"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 35 // Increased to 35
+        versionCode = 4
+        versionName = "1.0.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (localProperties.containsKey("storeFile")) {
+                storeFile = file(localProperties.getProperty("storeFile"))
+                storePassword = localProperties.getProperty("storePassword")
+                keyAlias = localProperties.getProperty("keyAlias")
+                keyPassword = localProperties.getProperty("keyPassword")
+            } else {
+                // Handle the case where storeFile is not in key.properties
+                println("Warning: storeFile not found in key.properties. Using debug keystore.")
+                storeFile = file("$rootDir/debug.keystore") // Use debug keystore or specify a default
+                storePassword = "android"  // Default debug keystore password
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            // ... other release configurations (e.g., minifyEnabled)
         }
     }
 }
