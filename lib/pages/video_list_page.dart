@@ -5,6 +5,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:rbd_app/pages/videoPlayer/video_player.dart';
+import 'package:rbd_app/pages/subject_page.dart';
+import 'package:rbd_app/pages/assignments_page.dart';
+import 'package:rbd_app/pages/announcements_page.dart';
+import 'package:rbd_app/pages/lessons_page.dart';
+import 'package:rbd_app/pages/topics_page.dart';
+import 'package:rbd_app/pages/academic_calendar_page.dart';
+import 'package:rbd_app/pages/exams_page.dart';
+import 'package:rbd_app/pages/add_result_page.dart';
+import 'package:rbd_app/pages/manage_leaves_page.dart';
+import 'package:rbd_app/pages/student_leaves_page.dart';
 import 'package:logger/logger.dart';
 import 'package:rbd_app/authentication/login_page.dart';
 
@@ -190,12 +200,27 @@ class _VideoListPageState extends State<VideoListPage> {
     return pdfFiles;
   }
 
+  IconData _getSubjectIcon(String subjectName) {
+    switch (subjectName.toLowerCase()) {
+      case 'mathematics':
+        return Icons.calculate;
+      case 'chemistry':
+        return Icons.science;
+      case 'physics':
+        return Icons.speed;
+      case 'biology':
+        return Icons.biotech;
+      default:
+        return Icons.school;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Video Library'),
+          title: Text('Zenith'),
           actions: [
             IconButton(
               icon: Icon(Icons.logout),
@@ -215,7 +240,7 @@ class _VideoListPageState extends State<VideoListPage> {
     if (error != null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Video Library'),
+          title: Text('Zenith'),
           actions: [
             IconButton(
               icon: Icon(Icons.logout),
@@ -232,23 +257,20 @@ class _VideoListPageState extends State<VideoListPage> {
       );
     }
 
-    Map<String, Map<String, List<Map<String, dynamic>>>> organizedVideos = {};
+    // Organize videos by subject
+    Map<String, List<Map<String, dynamic>>> organizedVideos = {};
 
     for (var video in videos) {
       String subject = video['subject'];
-      String topic = video['topic'];
       if (!organizedVideos.containsKey(subject)) {
-        organizedVideos[subject] = {};
+        organizedVideos[subject] = [];
       }
-      if (!organizedVideos[subject]!.containsKey(topic)) {
-        organizedVideos[subject]![topic] = [];
-      }
-      organizedVideos[subject]![topic]!.add(video);
+      organizedVideos[subject]!.add(video);
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Video Library'),
+        title: Text('Zenith'),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -261,74 +283,398 @@ class _VideoListPageState extends State<VideoListPage> {
           ),
         ],
       ),
-      body: ListView(
-        children:
-            organizedVideos.entries.map((subjectEntry) {
-              return ExpansionTile(
-                title: Text(
-                  subjectEntry.key,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                children:
-                    subjectEntry.value.entries.map((topicEntry) {
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Subjects Module
+            Container(
+              margin: EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subjects',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.1,
+                    ),
+                    itemCount: organizedVideos.length,
+                    itemBuilder: (context, index) {
+                      String subjectName = organizedVideos.keys.elementAt(
+                        index,
+                      );
+                      List<Map<String, dynamic>> subjectVideos =
+                          organizedVideos[subjectName]!;
+
                       return Container(
-                        margin: EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 15,
-                        ),
-                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.orange.shade200),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.white, Colors.grey.shade50],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.15),
+                              spreadRadius: 1,
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: ExpansionTile(
-                          title: Text(
-                            topicEntry.key,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.orange.shade800,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => SubjectPage(
+                                        subjectName: subjectName,
+                                        subjectVideos: subjectVideos,
+                                      ),
+                                ),
+                              );
+                              logger.i(
+                                "Navigating to subject: $subjectName for student: ${user!.email}",
+                              );
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.blue.shade400,
+                                          Colors.blue.shade600,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      _getSubjectIcon(subjectName),
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    subjectName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    '${subjectVideos.length} videos',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          children:
-                              topicEntry.value.map((video) {
-                                return ListTile(
-                                  title: Text(
-                                    video['subtopic'],
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  subtitle: Text(
-                                    'Batch: ${video['batch']} | Size: ${video['size']} MB',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  trailing: Icon(
-                                    Icons.play_circle_fill,
-                                    color: Colors.orange,
-                                  ),
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => VideoPlayerScreen(
-                                              videoUrl:
-                                                  'https://vz-d5d4ebc7-6d2.b-cdn.net/${video['bunnyVideoId']}/playlist.m3u8',
-                                              actorName: user!.email!,
-                                              videoName: video['name'],
-                                            ),
-                                      ),
-                                    );
-                                    logger.i(
-                                      "Navigating to video: ${video['name']} for student: ${user!.email}",
-                                    );
-                                  },
-                                );
-                              }).toList(),
                         ),
                       );
-                    }).toList(),
-              );
-            }).toList(),
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Today's Timetable Module
+            Container(
+              margin: EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Today\'s Timetable',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.orange.shade50, Colors.orange.shade100],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.orange.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade400,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.schedule,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'No classes scheduled for today',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.orange.shade800,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Your daily schedule will appear here',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.orange.shade600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Explore Academics Module
+            Container(
+              margin: EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explore Academics',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: 9,
+                    itemBuilder: (context, index) {
+                      List<Map<String, dynamic>> academicFeatures = [
+                        {'title': 'Assignments', 'icon': Icons.book},
+                        {'title': 'Announcements', 'icon': Icons.campaign},
+                        {'title': 'Lessons', 'icon': Icons.person},
+                        {'title': 'Topics', 'icon': Icons.present_to_all},
+                        {
+                          'title': 'Academic Calendar',
+                          'icon': Icons.calendar_today,
+                        },
+                        {'title': 'Exams', 'icon': Icons.assignment},
+                        {'title': 'Add Result', 'icon': Icons.note_add},
+                        {
+                          'title': 'Manage Leaves',
+                          'icon': Icons.calendar_month,
+                        },
+                        {'title': 'Student Leaves', 'icon': Icons.people},
+                      ];
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.white, Colors.grey.shade50],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              switch (index) {
+                                case 0:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => AssignmentsPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 1:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => AnnouncementsPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 2:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => LessonsPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 3:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => TopicsPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 4:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => AcademicCalendarPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 5:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ExamsPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 6:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => AddResultPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 7:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ManageLeavesPage(),
+                                    ),
+                                  );
+                                  break;
+                                case 8:
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => StudentLeavesPage(),
+                                    ),
+                                  );
+                                  break;
+                              }
+                              logger.i(
+                                "Navigating to: ${academicFeatures[index]['title']}",
+                              );
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.indigo.shade400,
+                                          Colors.indigo.shade600,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      academicFeatures[index]['icon'],
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    academicFeatures[index]['title'],
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

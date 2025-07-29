@@ -35,8 +35,8 @@ android {
         applicationId = "com.zenith.lms"
         minSdk = 23
         targetSdk = 35 // Increased to 35
-        versionCode = 4
-        versionName = "1.0.1"
+        versionCode = 8
+        versionName = "1.0.2"
     }
 
     signingConfigs {

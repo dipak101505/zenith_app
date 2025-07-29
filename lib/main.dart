@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rbd_app/authentication/login_page.dart';
 import 'package:rbd_app/authentication/signup_page.dart';
-import 'package:rbd_app/pages/home_page.dart';
 import 'package:rbd_app/pages/videoPlayer/video_player.dart';
 import 'package:rbd_app/pages/video_list_page.dart';
 
